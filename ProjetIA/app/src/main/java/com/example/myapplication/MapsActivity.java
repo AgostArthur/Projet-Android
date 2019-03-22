@@ -258,6 +258,8 @@ public class MapsActivity extends FragmentActivity implements
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        Intent connexion = new Intent(getApplicationContext(), connexion.class);
+        startActivity(connexion);
         this.finish();
         return super.onOptionsItemSelected(item);
     }
