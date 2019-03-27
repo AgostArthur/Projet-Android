@@ -182,39 +182,40 @@ public class MapsActivity extends FragmentActivity implements
                         .add(latLng).add(previusLatIng).width(10).color(Color.GREEN).geodesic(true));
         }
         previusLatIng = latLng;
-
-        OkHttpClient client = new OkHttpClient();
-        url = "http://localhost:3306/customer/add?"
-                + "email=" + getIntent().getStringExtra("mail")
-                + "&transport=" + getIntent().getStringExtra("setting")
-                + "&vitesse=" + location.getSpeed()
-                + "&longitude=" + location.getLongitude()
-                + "&latitude=" + location.getLatitude()
-                + "&altitude=" + location.getAltitude()
-                + "&accelerationX=" + acceleration[0]
-                + "&accelerationY=" + acceleration[1]
-                + "&accelerationZ=" + acceleration[2]
-                + "&normeAcceleration=" + Math.sqrt(Math.pow(acceleration[0],2) + Math.pow(acceleration[1],2) + Math.pow(acceleration[2],2))
-                + "&date=" + date();
-        Log.d("date", "testDate :"+location.getTime());
-        final Request request = new Request.Builder().url(url).build();
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(getApplicationContext(), "connection au server impossible.", Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
-
-            @Override
-            public void onResponse(Call call, final Response response) throws IOException {
-                if (response.isSuccessful()) {
+        if (location.getSpeed() > 2.5) {
+            OkHttpClient client = new OkHttpClient();
+            url = "http://192.168.43.115:8080/data/add?"
+                    + "email=" + getIntent().getStringExtra("mail")
+                    + "&transport=" + getIntent().getStringExtra("setting")
+                    + "&vitesse=" + location.getSpeed()
+                    + "&longitude=" + location.getLongitude()
+                    + "&latitude=" + location.getLatitude()
+                    + "&altitude=" + location.getAltitude()
+                    + "&accelerationX=" + acceleration[0]
+                    + "&accelerationY=" + acceleration[1]
+                    + "&accelerationZ=" + acceleration[2]
+                    + "&normeAcceleration=" + Math.sqrt(Math.pow(acceleration[0], 2) + Math.pow(acceleration[1], 2) + Math.pow(acceleration[2], 2))
+                    + "&date=" + date();
+            Log.d("date", "testDate :" + location.getTime());
+            final Request request = new Request.Builder().url(url).build();
+            client.newCall(request).enqueue(new Callback() {
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(getApplicationContext(), "connection au server impossible.", Toast.LENGTH_SHORT).show();
+                        }
+                    });
                 }
-            }
-        });
+
+                @Override
+                public void onResponse(Call call, final Response response) throws IOException {
+                    if (response.isSuccessful()) {
+                    }
+                }
+            });
+        }
 
 //        if (googleApiClient != null) {
 //            LocationServices.FusedLocationApi.removeLocationUpdates(googleApiClient, this);
