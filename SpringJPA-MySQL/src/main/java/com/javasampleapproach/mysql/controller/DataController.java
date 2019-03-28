@@ -24,7 +24,7 @@ public class DataController {
 			@RequestParam("accelerationY") float accelerationY,
 			@RequestParam("accelerationZ") float accelerationZ,
 			@RequestParam("normeAcceleration") float normeAcceleration,
-			@RequestParam("date") String date) {
+			@RequestParam("date") String date){
 			repository.save(new Data(email, transport, vitesse, longitude, latitude, altitude, accelerationX, accelerationY, accelerationZ, normeAcceleration, date));
 	}
 	
