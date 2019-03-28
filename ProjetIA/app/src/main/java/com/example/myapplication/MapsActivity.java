@@ -2,18 +2,13 @@ package com.example.myapplication;
 
 import android.Manifest;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.res.Resources;
 import android.graphics.Color;
-import android.graphics.Point;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Location;
-import android.location.LocationManager;
-import android.location.LocationProvider;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -21,8 +16,8 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
-import android.util.Log;
-import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -34,16 +29,14 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 
 import okhttp3.Call;
@@ -59,7 +52,7 @@ public class MapsActivity extends FragmentActivity implements
         GoogleApiClient.OnConnectionFailedListener,
         LocationListener {
 
-    private String mail;
+    private String[] a;
     private String url;
     private GoogleMap mMap;
     private GoogleApiClient googleApiClient;
@@ -69,15 +62,19 @@ public class MapsActivity extends FragmentActivity implements
     private LatLng previusLatIng;
     private SensorManager sensorManager;
     private float[] acceleration;
-    private float[] prevAcceleration;
     Sensor accelerometer;
     private static final int Request_User_Location_Code = 99;
     private boolean occ = true;
+
+    Button start, stop;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+
+        start = findViewById(R.id.button_start);
+        stop = findViewById(R.id.button_stop);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             checkUserLocationPermission();
@@ -93,16 +90,6 @@ public class MapsActivity extends FragmentActivity implements
         sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
-
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
@@ -161,6 +148,35 @@ public class MapsActivity extends FragmentActivity implements
         googleApiClient.connect();
     }
 
+    public void saveFile(String str, boolean append) {
+        FileOutputStream fos;
+        try {
+            if (append) {
+                fos = openFileOutput("data.txt", Context.MODE_APPEND);
+            } else {
+                fos = openFileOutput("data.txt", Context.MODE_PRIVATE);
+            }
+            fos.write(str.getBytes());
+            fos.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String readFile() {
+        try {
+            FileInputStream fls = openFileInput("data.txt");
+            int size = fls.available();
+            byte[] buffer = new byte[size];
+            fls.read(buffer);
+            String text = new String(buffer);
+            return text;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        }
+    }
+
     @Override
     public void onLocationChanged(Location location) {
         lastLocation = location;
@@ -177,14 +193,14 @@ public class MapsActivity extends FragmentActivity implements
         } else {
             mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng,
                     mMap.getCameraPosition().zoom), 1000, null);
-            if (location.getSpeed() > 2.5)
+            if (location.getSpeed() > 2)
                 mMap.addPolyline(new PolylineOptions()
                         .add(latLng).add(previusLatIng).width(10).color(Color.GREEN).geodesic(true));
         }
         previusLatIng = latLng;
-        if (location.getSpeed() > 2.5) {
+        if (location.getSpeed() > 2) {
             OkHttpClient client = new OkHttpClient();
-            url = "http://192.168.43.115:8080/data/add?"
+            url = "http://82.231.49.191:8080/data/add?"
                     + "email=" + getIntent().getStringExtra("mail")
                     + "&transport=" + getIntent().getStringExtra("setting")
                     + "&vitesse=" + location.getSpeed()
@@ -196,7 +212,6 @@ public class MapsActivity extends FragmentActivity implements
                     + "&accelerationZ=" + acceleration[2]
                     + "&normeAcceleration=" + Math.sqrt(Math.pow(acceleration[0], 2) + Math.pow(acceleration[1], 2) + Math.pow(acceleration[2], 2))
                     + "&date=" + date();
-            Log.d("date", "testDate :" + location.getTime());
             final Request request = new Request.Builder().url(url).build();
             client.newCall(request).enqueue(new Callback() {
                 @Override
@@ -205,6 +220,7 @@ public class MapsActivity extends FragmentActivity implements
                         @Override
                         public void run() {
                             Toast.makeText(getApplicationContext(), "connection au server impossible.", Toast.LENGTH_SHORT).show();
+                            saveFile(url + "\n", true);
                         }
                     });
                 }
@@ -212,28 +228,59 @@ public class MapsActivity extends FragmentActivity implements
                 @Override
                 public void onResponse(Call call, final Response response) throws IOException {
                     if (response.isSuccessful()) {
+                        a = readFile().split("\n");
+                        if (a[0] != "") {
+                            for (int i = 0; i < a.length; i++) {
+                                OkHttpClient client = new OkHttpClient();
+                                final Request request = new Request.Builder().url(a[i]).build();
+                                client.newCall(request).enqueue(new Callback() {
+                                    @Override
+                                    public void onFailure(Call call, IOException e) {
+                                    }
+
+                                    @Override
+                                    public void onResponse(Call call, final Response response) throws IOException {
+                                    }
+                                });
+                            }
+                        }
+                        saveFile("", false);
                     }
                 }
             });
         }
-
-//        if (googleApiClient != null) {
-//            LocationServices.FusedLocationApi.removeLocationUpdates(googleApiClient, this);
-//        }
     }
 
+    public void test(View view) {
+        Toast.makeText(getApplicationContext(), "" + readFile(), Toast.LENGTH_SHORT).show();
+    }
 
-    @Override
-    public void onConnected(@Nullable Bundle bundle) {
+    public void startLoc(View view) {
         locationRequest = new LocationRequest();
         locationRequest.setInterval(5500);
         locationRequest.setFastestInterval(4500);
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 //        locationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+        start.setVisibility(Button.INVISIBLE);
+        stop.setVisibility(Button.VISIBLE);
+
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient, locationRequest, this);
         }
+    }
+
+    public void stopLoc(View view) {
+        start.setVisibility(Button.VISIBLE);
+        stop.setVisibility(Button.INVISIBLE);
+        if (googleApiClient != null) {
+            LocationServices.FusedLocationApi.removeLocationUpdates(googleApiClient, this);
+        }
+    }
+
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+
     }
 
     @Override

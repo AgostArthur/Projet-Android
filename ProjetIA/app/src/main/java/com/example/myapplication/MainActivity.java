@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
         } else {
             radioButton = findViewById(radioGroup.getCheckedRadioButtonId());
             OkHttpClient client = new OkHttpClient();
-            String url = "http://192.168.43.115:8080/customer/add?"
+            String url = "http://82.231.49.191:8080/customer/add?"
                     + "genre=" + radioButton.getText()
                     + "&prenom=" + prenom.getText().toString()
                     + "&nom=" + nom.getText().toString()

@@ -39,7 +39,7 @@ public class connexion extends AppCompatActivity {
 
     //lit le fichier liste.txt en mémoire interne du tel si déja créer
     public void connexion_serveur() throws IOException {
-        String url = "http://192.168.43.115:8080/customer/findbyemail?email=" + mail.getText().toString();
+        String url = "http://82.231.49.191:8080/customer/findbyemail?email=" + mail.getText().toString();
         Request request = new Request.Builder().url(url).build();
         client.newCall(request).enqueue(new Callback() {
             @Override
